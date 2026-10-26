@@ -1,0 +1,573 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Hall Booking Schedule</title>
+
+    <style>
+        :root {
+            --primary: #1d4ed8;
+            --primary-dark: #1e40af;
+            --background: #f3f5f9;
+            --surface: #ffffff;
+            --text: #1f2937;
+            --muted: #64748b;
+            --border: #dbe2ea;
+            --available: #dcfce7;
+            --available-text: #166534;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 24px 16px;
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--background);
+            color: var(--text);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            color: var(--primary-dark);
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        p {
+            line-height: 1.5;
+        }
+
+        .subtitle,
+        .muted {
+            color: var(--muted);
+        }
+
+        .panel {
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 16px #00000008;
+        }
+
+        .hall-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .hall-card {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 18px;
+            background: white;
+        }
+
+        .hall-card h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+
+        .hall-card p {
+            color: var(--muted);
+            min-height: 44px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+            background: var(--available);
+            color: var(--available-text);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .form-group {
+            min-width: 0;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 7px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            background: white;
+            color: var(--text);
+            font: inherit;
+        }
+
+        textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: 2px solid #93c5fd;
+            border-color: var(--primary);
+        }
+
+        .help-text {
+            display: block;
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 22px;
+        }
+
+        button,
+        .button-link {
+            display: inline-block;
+            border: none;
+            border-radius: 7px;
+            padding: 12px 18px;
+            background: var(--primary);
+            color: white;
+            font: inherit;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        button:hover,
+        .button-link:hover {
+            background: var(--primary-dark);
+        }
+
+        .secondary-button {
+            background: #e2e8f0;
+            color: var(--text);
+        }
+
+        .secondary-button:hover {
+            background: #cbd5e1;
+        }
+
+        .notice {
+            padding: 12px 14px;
+            border-radius: 8px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            margin-bottom: 18px;
+        }
+
+        .warning {
+            padding: 12px 14px;
+            border-radius: 8px;
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            color: #9a3412;
+            margin-top: 18px;
+        }
+
+        .result {
+            display: none;
+            padding: 16px;
+            margin-top: 18px;
+            border-radius: 8px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+        }
+
+        footer {
+            text-align: center;
+            color: var(--muted);
+            padding: 12px;
+        }
+
+        @media (max-width: 700px) {
+            .hall-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .full-width {
+                grid-column: auto;
+            }
+
+            .panel {
+                padding: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <header>
+        <div>
+            <h1>Hall Allocation System</h1>
+            <p class="subtitle">
+                View halls and submit a booking request.
+            </p>
+        </div>
+
+        <a class="button-link secondary-button" href="/">
+            Back to Home
+        </a>
+    </header>
+
+    <section class="panel">
+        <h2>Available Halls</h2>
+
+        <p class="muted">
+            Select a hall in the form below. Availability must be
+            confirmed before a request can be approved.
+        </p>
+
+        <div class="hall-grid">
+            <article class="hall-card">
+                <h3>Hall A</h3>
+                <p>Suitable for speeches and presentations.</p>
+                <span class="status">Booking requests open</span>
+            </article>
+
+            <article class="hall-card">
+                <h3>Hall B</h3>
+                <p>Suitable for seminars and workshops.</p>
+                <span class="status">Booking requests open</span>
+            </article>
+
+            <article class="hall-card">
+                <h3>Hall C</h3>
+                <p>Suitable for meetings and group activities.</p>
+                <span class="status">Booking requests open</span>
+            </article>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Request a Hall Booking</h2>
+
+        <div class="notice">
+            <strong>Important:</strong>
+            Submitting this form is only a request. Your booking
+            is not confirmed until an administrator approves it.
+        </div>
+
+        <!-- Front-end demonstration form.
+             Flask must be connected before requests are saved. -->
+        <form id="bookingForm">
+
+            <div class="form-grid">
+
+                <div class="form-group">
+                    <label for="applicant_name">Applicant Name</label>
+                    <input
+                        id="applicant_name"
+                        name="applicant_name"
+                        type="text"
+                        maxlength="100"
+                        required
+                        autocomplete="name"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="department">Department</label>
+                    <input
+                        id="department"
+                        name="department"
+                        type="text"
+                        maxlength="100"
+                        required
+                        placeholder="e.g. Electronics and Communication"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="contact_number">Contact Number</label>
+                    <input
+                        id="contact_number"
+                        name="contact_number"
+                        type="tel"
+                        maxlength="20"
+                        required
+                        autocomplete="tel"
+                        placeholder="Enter contact number"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="hall_id">Select Hall</label>
+                    <select id="hall_id" name="hall_id" required>
+                        <option value="">Choose a hall</option>
+                        <option value="1">Hall A</option>
+                        <option value="2">Hall B</option>
+                        <option value="3">Hall C</option>
+                    </select>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="event_name">Event Name</label>
+                    <input
+                        id="event_name"
+                        name="event_name"
+                        type="text"
+                        maxlength="150"
+                        required
+                        placeholder="e.g. Technical Seminar"
+                    >
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="purpose">Purpose of Booking</label>
+                    <textarea
+                        id="purpose"
+                        name="purpose"
+                        maxlength="2000"
+                        required
+                        placeholder="Explain the purpose of the event"
+                    ></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="attendee_count">Expected Attendees</label>
+                    <input
+                        id="attendee_count"
+                        name="attendee_count"
+                        type="number"
+                        min="1"
+                        max="10000"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="booking_date">Booking Date</label>
+                    <input
+                        id="booking_date"
+                        name="booking_date"
+                        type="date"
+                        required
+                    >
+                    <span class="help-text">
+                        Bookings are allowed Monday through Saturday.
+                    </span>
+                </div>
+
+                <div class="form-group">
+                    <label for="start_time">Start Time</label>
+                    <select id="start_time" name="start_time" required>
+                        <option value="">Select start time</option>
+                        <option value="09:00">9:00 AM</option>
+                        <option value="10:00">10:00 AM</option>
+                        <option value="11:00">11:00 AM</option>
+                        <option value="12:00">12:00 PM</option>
+                        <option value="13:00">1:00 PM</option>
+                        <option value="14:00">2:00 PM</option>
+                        <option value="15:00">3:00 PM</option>
+                        <option value="16:00">4:00 PM</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="end_time">End Time</label>
+                    <select id="end_time" name="end_time" required>
+                        <option value="">Select end time</option>
+                        <option value="10:00">10:00 AM</option>
+                        <option value="11:00">11:00 AM</option>
+                        <option value="12:00">12:00 PM</option>
+                        <option value="13:00">1:00 PM</option>
+                        <option value="14:00">2:00 PM</option>
+                        <option value="15:00">3:00 PM</option>
+                        <option value="16:00">4:00 PM</option>
+                        <option value="17:00">5:00 PM</option>
+                    </select>
+                    <span class="help-text">
+                        Choose one continuous period, such as 10 AM–2 PM.
+                    </span>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="special_requirements">
+                        Special Requirements (Optional)
+                    </label>
+                    <textarea
+                        id="special_requirements"
+                        name="special_requirements"
+                        maxlength="2000"
+                        placeholder="e.g. Projector, microphone, seating arrangement"
+                    ></textarea>
+                </div>
+
+            </div>
+
+            <div class="warning">
+                Requests outside 9:00 AM–5:00 PM or on Sundays are
+                not permitted. The server must validate the date,
+                time, and hall availability before accepting a request.
+            </div>
+
+            <div class="button-row">
+                <button type="submit">Preview Booking Request</button>
+                <button type="reset" class="secondary-button">
+                    Clear Form
+                </button>
+            </div>
+
+            <div id="result" class="result" aria-live="polite"></div>
+
+        </form>
+    </section>
+
+    <footer>
+        Hall Allocation System
+    </footer>
+
+</div>
+
+<script>
+    const bookingForm = document.getElementById("bookingForm");
+    const bookingDate = document.getElementById("booking_date");
+    const startTime = document.getElementById("start_time");
+    const endTime = document.getElementById("end_time");
+    const result = document.getElementById("result");
+
+    // Prevent selecting past dates in this browser form.
+    // The Flask server must repeat this validation.
+    const today = new Date();
+    const localToday = [
+        today.getFullYear(),
+        String(today.getMonth() + 1).padStart(2, "0"),
+        String(today.getDate()).padStart(2, "0")
+    ].join("-");
+
+    bookingDate.min = localToday;
+
+    bookingDate.addEventListener("change", function () {
+        if (!bookingDate.value) {
+            return;
+        }
+
+        // JavaScript uses Sunday = 0 and Saturday = 6.
+        const selectedDate = new Date(
+            bookingDate.value + "T12:00:00"
+        );
+        const day = selectedDate.getDay();
+
+        if (day === 0) {
+            alert("Sunday bookings are not allowed.");
+            bookingDate.value = "";
+        }
+    });
+
+    bookingForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        if (!bookingForm.reportValidity()) {
+            return;
+        }
+
+        if (startTime.value >= endTime.value) {
+            alert("End time must be later than start time.");
+            return;
+        }
+
+        if (!bookingDate.value) {
+            alert("Please select a booking date.");
+            return;
+        }
+
+        const selectedDate = new Date(
+            bookingDate.value + "T12:00:00"
+        );
+
+        if (selectedDate.getDay() === 0) {
+            alert("Sunday bookings are not allowed.");
+            return;
+        }
+
+        const selectedHall =
+            document.getElementById("hall_id")
+                .selectedOptions[0].text;
+
+        const startLabel =
+            startTime.selectedOptions[0].text;
+
+        const endLabel =
+            endTime.selectedOptions[0].text;
+
+        const formData = new FormData(bookingForm);
+
+        result.replaceChildren();
+
+        const heading = document.createElement("h3");
+        heading.textContent = "Booking Request Preview";
+
+        const details = document.createElement("p");
+        details.textContent =
+            "Event: " + formData.get("event_name") +
+            " | Hall: " + selectedHall +
+            " | Date: " + bookingDate.value +
+            " | Time: " + startLabel + "–" + endLabel;
+
+        const notice = document.createElement("p");
+        notice.textContent =
+            "This is only a preview. No request has been saved " +
+            "or sent to the administrator yet.";
+
+        result.append(heading, details, notice);
+        result.style.display = "block";
+        result.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+
+    bookingForm.addEventListener("reset", function () {
+        result.style.display = "none";
+        result.replaceChildren();
+    });
+</script>
+
+</body>
+</html>

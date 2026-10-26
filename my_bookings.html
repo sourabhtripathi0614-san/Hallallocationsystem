@@ -1,0 +1,178 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My Bookings</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 24px 16px;
+            font-family: Arial, sans-serif;
+            background: #f3f5f9;
+            color: #1f2937;
+        }
+
+        main {
+            max-width: 1050px;
+            margin: auto;
+            padding: 26px;
+            background: white;
+            border-radius: 12px;
+        }
+
+        h1 { color: #1d4ed8; }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+
+        a.button {
+            display: inline-block;
+            padding: 11px 16px;
+            border-radius: 7px;
+            background: #1d4ed8;
+            color: white;
+            text-decoration: none;
+        }
+
+        a.secondary {
+            background: #e2e8f0;
+            color: #1f2937;
+        }
+
+        .message {
+            padding: 12px;
+            background: #eff6ff;
+            border-radius: 8px;
+            margin: 12px 0;
+        }
+
+        .table-wrap { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 18px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: top;
+        }
+
+        th { background: #f8fafc; }
+
+        .status {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            background: #e2e8f0;
+            white-space: nowrap;
+        }
+
+        .pending { background: #fef3c7; color: #92400e; }
+        .approved { background: #dcfce7; color: #166534; }
+        .rejected { background: #fee2e2; color: #991b1b; }
+        .cancelled { background: #e2e8f0; color: #334155; }
+        .cancellation_pending { background: #ffedd5; color: #9a3412; }
+
+        .empty {
+            padding: 25px;
+            text-align: center;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        .reason {
+            max-width: 240px;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        @media (max-width: 600px) {
+            main { padding: 16px; }
+        }
+    </style>
+</head>
+
+<body>
+<main>
+    <h1>My Bookings</h1>
+    <p>Review the status of your hall booking requests.</p>
+
+    {% for message in get_flashed_messages() %}
+        <div class="message">{{ message }}</div>
+    {% endfor %}
+
+    <div class="actions">
+        <a class="button" href="{{ url_for('book') }}">
+            Request a Booking
+        </a>
+        <a class="button secondary" href="{{ url_for('home') }}">
+            Back to Home
+        </a>
+    </div>
+
+    {% if bookings %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Hall</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                        <th>Admin decision</th>
+                        <th>Submitted</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for booking in bookings %}
+                        <tr>
+                            <td>{{ booking.event_name }}</td>
+                            <td>{{ booking.hall_name }}</td>
+                            <td>{{ booking.booking_date }}</td>
+                            <td>
+                                {{ booking.start_time }}–{{ booking.end_time }}
+                            </td>
+                            <td>
+                                <span class="status {{ booking.status }}">
+                                    {% if booking.status == 'cancellation_pending' %}
+                                        Cancellation pending
+                                    {% else %}
+                                        {{ booking.status|capitalize }}
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td class="reason">
+                                {{ booking.admin_decision_reason or '—' }}
+                            </td>
+                            <td>{{ booking.created_at }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty">
+            <h2>No booking requests yet</h2>
+            <p>Submit a booking request to see it listed here.</p>
+        </div>
+    {% endif %}
+</main>
+</body>
+</html>

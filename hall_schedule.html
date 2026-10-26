@@ -1,0 +1,269 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ hall.name }} - Availability</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 24px 16px;
+            font-family: Arial, sans-serif;
+            background: #f3f5f9;
+            color: #1f2937;
+        }
+
+        main {
+            max-width: 1000px;
+            margin: auto;
+            padding: 26px;
+            background: white;
+            border-radius: 12px;
+        }
+
+        h1 { color: #1d4ed8; }
+
+        .muted { color: #64748b; line-height: 1.6; }
+
+        .panel {
+            margin: 20px 0;
+            padding: 18px;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .date-form {
+            display: flex;
+            align-items: end;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: bold;
+        }
+
+        input {
+            padding: 11px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            font: inherit;
+        }
+
+        button, .button {
+            display: inline-block;
+            padding: 11px 16px;
+            border: none;
+            border-radius: 7px;
+            background: #1d4ed8;
+            color: white;
+            font: inherit;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        button:hover, .button:hover { background: #1e40af; }
+
+        .secondary {
+            background: #e2e8f0;
+            color: #1f2937;
+        }
+
+        .secondary:hover { background: #cbd5e1; }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin: 18px 0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .dot {
+            width: 13px;
+            height: 13px;
+            display: inline-block;
+            border-radius: 4px;
+        }
+
+        .green { background: #dcfce7; }
+        .red { background: #fee2e2; }
+        .amber { background: #fef3c7; }
+
+        .slot-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .slot {
+            padding: 16px 12px;
+            border: 1px solid #bbf7d0;
+            border-radius: 9px;
+            background: #f0fdf4;
+        }
+
+        .slot strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .slot span {
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .slot.booked {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+
+        .slot.pending {
+            background: #fffbeb;
+            border-color: #fde68a;
+        }
+
+        .closed {
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 22px;
+        }
+
+        .notice {
+            padding: 13px;
+            border-radius: 8px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 700px) {
+            .slot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            main { padding: 17px; }
+        }
+
+        @media (max-width: 400px) {
+            .slot-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+
+<body>
+<main>
+    <h1>{{ hall.name }} — Availability</h1>
+    <p class="muted">{{ hall.description }}</p>
+
+    <section class="panel">
+        <form method="GET"
+              action="{{ url_for('hall_schedule', hall_id=hall.id) }}"
+              class="date-form">
+
+            <div>
+                <label for="booking_date">Select a date</label>
+                <input
+                    type="date"
+                    id="booking_date"
+                    name="date"
+                    value="{{ selected_date }}"
+                    min="{{ today }}"
+                    required
+                >
+            </div>
+
+            <button type="submit">Check availability</button>
+        </form>
+
+        <p class="muted">
+            Operating hours: 9:00 AM–5:00 PM, Monday to Saturday.
+        </p>
+    </section>
+
+    <section class="panel">
+        <h2>Time slots for {{ selected_date }}</h2>
+
+        <div class="legend">
+            <div class="legend-item">
+                <span class="dot green"></span> No booking conflict
+            </div>
+            <div class="legend-item">
+                <span class="dot red"></span> Confirmed booking
+            </div>
+            <div class="legend-item">
+                <span class="dot amber"></span> Pending request
+            </div>
+        </div>
+
+        {% if is_sunday %}
+            <div class="closed">
+                <strong>Hall closed on Sunday.</strong>
+                Please select a Monday–Saturday date.
+            </div>
+        {% else %}
+            <div class="slot-grid">
+                {% for slot in slots %}
+                    <div class="slot
+                        {% if slot.status == 'booked' %}booked{% endif %}
+                        {% if slot.status == 'pending' %}pending{% endif %}">
+
+                        <strong>
+                            {{ slot.start_label }} – {{ slot.end_label }}
+                        </strong>
+
+                        {% if slot.status == 'booked' %}
+                            <span>Confirmed booking</span>
+                        {% elif slot.status == 'pending' %}
+                            <span>Pending request — availability not guaranteed</span>
+                        {% else %}
+                            <span>No confirmed booking</span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </section>
+
+    <div class="notice">
+        <strong>Important:</strong> This schedule shows existing requests
+        and confirmed bookings. A pending request is not a confirmed
+        reservation. Your requested period will be checked again when
+        you submit the booking form and when the administrator reviews it.
+    </div>
+
+    <div class="actions">
+        {% if not is_sunday %}
+            <a class="button"
+               href="{{ url_for('book', hall_id=hall.id, booking_date=selected_date) }}">
+                Request this hall
+            </a>
+        {% endif %}
+
+        <a class="button secondary" href="{{ url_for('home') }}">
+            Back to halls
+        </a>
+
+        <a class="button secondary" href="{{ url_for('my_bookings') }}">
+            My Bookings
+        </a>
+    </div>
+</main>
+</body>
+</html>

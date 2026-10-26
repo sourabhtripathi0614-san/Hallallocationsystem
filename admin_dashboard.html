@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin Dashboard - Hall Allocation System</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 24px 14px; font-family: Arial, sans-serif; background: #f3f5f9; color: #1f2937; }
+        main { max-width: 1180px; margin: auto; }
+        .topbar, .actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        .panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-bottom: 18px; box-shadow: 0 3px 12px #00000008; }
+        h1 { margin: 0; color: #1d4ed8; } h2 { margin-top: 0; }
+        .muted { color: #64748b; }
+        .button, button { display: inline-block; border: 0; border-radius: 7px; padding: 10px 14px; text-decoration: none; font-weight: 600; cursor: pointer; color: white; background: #1d4ed8; }
+        .secondary { background: #475569; }
+        .logout { background: #dc2626; }
+        .stats { display: grid; grid-template-columns: repeat(6, minmax(110px, 1fr)); gap: 12px; margin: 18px 0; }
+        .stat { background: white; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; }
+        .stat span { display: block; color: #64748b; font-size: 13px; margin-bottom: 7px; }
+        .stat strong { font-size: 25px; }
+        .message { background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px; border-radius: 8px; }
+        .request-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+        .request { border: 1px solid #e2e8f0; border-radius: 10px; padding: 17px; background: #fff; min-width: 0; }
+        .request h3 { margin: 0 0 8px; overflow-wrap: anywhere; }
+        .meta { line-height: 1.55; overflow-wrap: anywhere; }
+        .pill { display: inline-block; padding: 5px 9px; border-radius: 999px; background: #e2e8f0; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+        .pending { background: #fef3c7; color: #92400e; } .approved { background: #dcfce7; color: #166534; }
+        .rejected { background: #fee2e2; color: #991b1b; } .cancelled { background: #e2e8f0; color: #334155; }
+        .decision-form { border-top: 1px solid #e5e7eb; margin-top: 14px; padding-top: 14px; }
+        label { display: block; font-weight: 600; margin: 9px 0 5px; }
+        textarea { width: 100%; min-height: 70px; resize: vertical; padding: 10px; border: 1px solid #cbd5e1; border-radius: 7px; font: inherit; }
+        .approve { background: #15803d; } .reject { background: #b91c1c; }
+        .form-actions { display: flex; gap: 9px; margin-top: 10px; flex-wrap: wrap; }
+        .form-actions button { flex: 1; min-width: 110px; }
+        .reason { background: #f8fafc; border-radius: 7px; padding: 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+        @media (max-width: 900px) { .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } .request-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 480px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .panel { padding: 15px; } }
+    </style>
+</head>
+<body>
+<main>
+    <section class="panel">
+        <div class="topbar">
+            <div>
+                <h1>Admin Dashboard</h1>
+                <p class="muted">Signed in as {{ user.full_name }} · Review and decide hall booking requests.</p>
+            </div>
+            <div class="actions">
+                <a class="button secondary" href="{{ url_for('home') }}">Home</a>
+                <form method="POST" action="{{ url_for('logout') }}">
+                    <button class="logout" type="submit">Log out</button>
+                </form>
+            </div>
+        </div>
+        {% for message in get_flashed_messages() %}
+            <p class="message">{{ message }}</p>
+        {% endfor %}
+    </section>
+
+    <section class="stats" aria-label="Booking request totals">
+        <div class="stat"><span>Total requests</span><strong>{{ counts.total }}</strong></div>
+        <div class="stat"><span>Pending</span><strong>{{ counts.pending }}</strong></div>
+        <div class="stat"><span>Approved</span><strong>{{ counts.approved }}</strong></div>
+        <div class="stat"><span>Rejected</span><strong>{{ counts.rejected }}</strong></div>
+        <div class="stat"><span>Cancellation pending</span><strong>{{ counts.cancellation_pending }}</strong></div>
+        <div class="stat"><span>Cancelled</span><strong>{{ counts.cancelled }}</strong></div>
+    </section>
+
+    <section class="panel">
+        <h2>Booking requests</h2>
+        <p class="muted">Pending requests appear first. Approving a request checks again for an overlapping confirmed booking.</p>
+
+        {% if booking_requests %}
+            <div class="request-grid">
+            {% for item in booking_requests %}
+                <article class="request">
+                    <div class="topbar">
+                        <h3>{{ item.event_name }}</h3>
+                        <span class="pill {{ item.status }}">{{ item.status.replace('_', ' ') }}</span>
+                    </div>
+                    <p class="meta">
+                        <strong>Request #{{ item.id }}</strong><br>
+                        <strong>Hall:</strong> {{ item.hall_name }}<br>
+                        <strong>Date:</strong> {{ item.booking_date }}<br>
+                        <strong>Time:</strong> {{ item.start_time }}–{{ item.end_time }}<br>
+                        <strong>Applicant:</strong> {{ item.applicant_name }}<br>
+                        <strong>Department:</strong> {{ item.department }}<br>
+                        <strong>Contact:</strong> {{ item.contact_number }}<br>
+                        <strong>Account email:</strong> {{ item.account_email or 'Not available' }}<br>
+                        <strong>Attendees:</strong> {{ item.attendee_count }}<br>
+                        <strong>Submitted:</strong> {{ item.created_at }}
+                    </p>
+                    <p><strong>Purpose</strong><br>{{ item.purpose }}</p>
+                    {% if item.special_requirements %}
+                        <p><strong>Special requirements</strong><br>{{ item.special_requirements }}</p>
+                    {% endif %}
+                    {% if item.admin_decision_reason %}
+                        <p><strong>Administrator note</strong></p>
+                        <div class="reason">{{ item.admin_decision_reason }}</div>
+                    {% endif %}
+
+                    {% if item.status == 'pending' %}
+                        <form class="decision-form" method="POST"
+                              action="{{ url_for('admin_decide_request', request_id=item.id) }}">
+                            <label for="reason-{{ item.id }}">Decision note (optional)</label>
+                            <textarea id="reason-{{ item.id }}" name="reason" maxlength="2000"
+                                      placeholder="Add a short explanation for the applicant"></textarea>
+                            <div class="form-actions">
+                                <button class="approve" type="submit" name="decision" value="approved"
+                                        onclick="return confirm('Approve this booking request?')">Approve</button>
+                                <button class="reject" type="submit" name="decision" value="rejected"
+                                        onclick="return confirm('Reject this booking request?')">Reject</button>
+                            </div>
+                        </form>
+                    {% endif %}
+                </article>
+            {% endfor %}
+            </div>
+        {% else %}
+            <p>No booking requests have been submitted yet.</p>
+        {% endif %}
+    </section>
+</main>
+</body>
+</html>

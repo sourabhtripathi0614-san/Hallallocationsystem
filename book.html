@@ -1,0 +1,308 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Request a Hall Booking</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 24px 16px;
+            font-family: Arial, sans-serif;
+            background: #f3f5f9;
+            color: #1f2937;
+        }
+
+        main {
+            max-width: 760px;
+            margin: auto;
+            padding: 28px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 18px #0000000d;
+        }
+
+        h1 { color: #1d4ed8; }
+
+        .intro { color: #64748b; line-height: 1.6; }
+
+        .notice {
+            padding: 13px;
+            margin: 18px 0;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+        }
+
+        .messages {
+            padding: 12px;
+            margin: 12px 0;
+            background: #fff7ed;
+            border-radius: 8px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .field { min-width: 0; }
+        .full { grid-column: 1 / -1; }
+
+        label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: bold;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            font: inherit;
+        }
+
+        textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        .help {
+            display: block;
+            margin-top: 6px;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        button, .link-button {
+            display: inline-block;
+            padding: 12px 18px;
+            border: 0;
+            border-radius: 7px;
+            background: #1d4ed8;
+            color: white;
+            font: inherit;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        button:hover, .link-button:hover { background: #1e40af; }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 22px;
+        }
+
+        .secondary {
+            background: #e2e8f0;
+            color: #1f2937;
+        }
+
+        .secondary:hover { background: #cbd5e1; }
+
+        @media (max-width: 600px) {
+            .grid { grid-template-columns: 1fr; }
+            .full { grid-column: auto; }
+            main { padding: 19px; }
+        }
+    </style>
+</head>
+
+<body>
+<main>
+    <h1>Request a Hall Booking</h1>
+
+    <p class="intro">
+        Submit your event details and preferred time. Your request
+        will remain pending until an administrator reviews it.
+    </p>
+
+    <div class="notice">
+        <strong>Booking rules</strong>
+        <ul>
+            <li>Bookings are allowed Monday through Saturday.</li>
+            <li>Operating hours are 9:00 AM to 5:00 PM.</li>
+            <li>Choose one continuous start and end time.</li>
+            <li>Submitting a request does not confirm the booking.</li>
+        </ul>
+    </div>
+
+    {% for message in get_flashed_messages() %}
+        <div class="messages">{{ message }}</div>
+    {% endfor %}
+
+    <form method="POST" action="{{ url_for('book') }}">
+        <div class="grid">
+
+            <div class="field">
+                <label for="applicant_name">Applicant name</label>
+                <input
+                    id="applicant_name"
+                    name="applicant_name"
+                    maxlength="100"
+                    required
+                    value="{{ form_data.get('applicant_name', user.full_name) }}"
+                >
+            </div>
+
+            <div class="field">
+                <label for="department">Department</label>
+                <input
+                    id="department"
+                    name="department"
+                    maxlength="100"
+                    required
+                    value="{{ form_data.get('department', '') }}"
+                    placeholder="e.g. ECE"
+                >
+            </div>
+
+            <div class="field">
+                <label for="contact_number">Contact number</label>
+                <input
+                    id="contact_number"
+                    name="contact_number"
+                    type="tel"
+                    maxlength="20"
+                    required
+                    value="{{ form_data.get('contact_number', '') }}"
+                    placeholder="Enter your contact number"
+                >
+            </div>
+
+            <div class="field">
+                <label for="hall_id">Select hall</label>
+                <select id="hall_id" name="hall_id" required>
+                    <option value="">Choose a hall</option>
+                    {% for hall in halls %}
+                        <option
+                            value="{{ hall.id }}"
+                            {% if form_data.get('hall_id', '')|string == hall.id|string %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ hall.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field full">
+                <label for="event_name">Event name</label>
+                <input
+                    id="event_name"
+                    name="event_name"
+                    maxlength="150"
+                    required
+                    value="{{ form_data.get('event_name', '') }}"
+                    placeholder="e.g. Technical seminar"
+                >
+            </div>
+
+            <div class="field full">
+                <label for="purpose">Purpose of booking</label>
+                <textarea
+                    id="purpose"
+                    name="purpose"
+                    maxlength="2000"
+                    required
+                    placeholder="Describe the event and its purpose"
+                >{{ form_data.get('purpose', '') }}</textarea>
+            </div>
+
+            <div class="field">
+                <label for="attendee_count">Expected attendees</label>
+                <input
+                    id="attendee_count"
+                    name="attendee_count"
+                    type="number"
+                    min="1"
+                    max="10000"
+                    required
+                    value="{{ form_data.get('attendee_count', '') }}"
+                >
+            </div>
+
+            <div class="field">
+                <label for="booking_date">Booking date</label>
+                <input
+                    id="booking_date"
+                    name="booking_date"
+                    type="date"
+                    min="{{ today }}"
+                    required
+                    value="{{ form_data.get('booking_date', '') }}"
+                >
+            </div>
+
+            <div class="field">
+                <label for="start_time">Start time</label>
+                <select id="start_time" name="start_time" required>
+                    <option value="">Choose start time</option>
+                    {% for time in time_options %}
+                        <option
+                            value="{{ time }}"
+                            {% if form_data.get('start_time', '') == time %}
+                                selected
+                            {% endif %}
+                        >
+                            {{ time }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="end_time">End time</label>
+                <select id="end_time" name="end_time" required>
+                    <option value="">Choose end time</option>
+                    {% for time in time_options %}
+                        {% if time != '09:00' %}
+                            <option
+                                value="{{ time }}"
+                                {% if form_data.get('end_time', '') == time %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ time }}
+                            </option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+                <span class="help">
+                    Example: start 10:00, end 14:00 means 10 AM–2 PM.
+                </span>
+            </div>
+
+            <div class="field full">
+                <label for="special_requirements">
+                    Special requirements (optional)
+                </label>
+                <textarea
+                    id="special_requirements"
+                    name="special_requirements"
+                    maxlength="2000"
+                    placeholder="Projector, microphone, seating, etc."
+                >{{ form_data.get('special_requirements', '') }}</textarea>
+            </div>
+
+        </div>
+
+        <div class="actions">
+            <button type="submit">Submit Booking Request</button>
+            <a class="link-button secondary" href="{{ url_for('home') }}">
+                Back to Home
+            </a>
+        </div>
+    </form>
+</main>
+</body>
+</html>
